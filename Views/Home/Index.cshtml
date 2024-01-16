@@ -1,0 +1,98 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<main>
+    <section class="row" aria-labelledby="aspnetTitle">
+        <h1 id="title">Aşağıdaki Form Üzerinden Bilgi Girişi Yapabilirsiniz</h1>
+    </section>
+
+    <div>
+        @model akademetre_cs_test.Models.UserModel
+
+        <form asp-action="Create" id="userForm">
+            <div class="form-group">
+                <br />
+                <input type="text" class="form-control" placeholder="Ad Giriniz" id ="ad" name="Ad" required>
+                <br/>
+                <input type="text" class="form-control" placeholder="Soyad Giriniz" id="soyad" name="Soyad" required>                      
+                <br />
+                <input type="text" class="form-control" placeholder="Adres Giriniz" id="adres" name="Adres" required>                    
+                <br />
+                <input type="email" class="form-control" placeholder="Email Giriniz" id="email" name="Email" required>
+            </div>
+            <br/>
+            <button type="submit" class="btn btn-primary">Kaydet</button>
+        </form>
+        <br/>
+        <a id="download" class="btn btn-primary">İndir</a>
+        <table id="userTable" class="display">
+            <thead>
+                <tr>
+                    <th>Ad</th>
+                    <th>Soyad</th>
+                    <th>Adres</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <script>
+            $(document).ready(function () {
+                var table = $('#userTable').DataTable();
+                $('#userForm').on('submit', function (e) {
+                    e.preventDefault();
+                    var isim = $('#ad').val();
+                    var soyisim = $('#soyad').val();
+                    var adres = $('#adres').val();
+                    var email = $('#email').val();
+                    table.row.add([
+                        isim,
+                        soyisim,
+                        adres,
+                        email
+                    ]).draw();
+                    this.reset();
+                });
+            });
+        </script>
+        <script>
+            document.getElementById('download').addEventListener('click', function () {
+                var table = document.getElementById('userTable');
+                var rows = table.getElementsByTagName('tr');
+                var dataList = [];
+                for (var i = 1; i < rows.length; i++) {
+                    var cells = rows[i].getElementsByTagName('td');
+                    var dataRow = [];
+                    for (var j = 0; j < cells.length; j++) {
+                        dataRow.push(cells[j].textContent.trim());
+                    }
+                    dataList.push(dataRow);
+                }
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '/User/CreateExcel', true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.responseType = 'blob';
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        console.log('Veriler başarıyla gönderildi.');
+                        var blob = new Blob([xhr.response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                        var downloadUrl = URL.createObjectURL(blob);
+                        var a = document.createElement("a");
+                        a.href = downloadUrl;
+                        a.download = "KullaniciBilgileri.xlsx";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(downloadUrl);
+                    } else if (xhr.readyState === 4)
+                    {
+                        console.error('Dosya indirilemedi.');
+                    }
+                }
+                xhr.send(JSON.stringify(dataList));
+            });
+        </script>
+    </div>
+</main>
